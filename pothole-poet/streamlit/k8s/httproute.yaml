@@ -1,0 +1,12 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: pothole-route
+  namespace: laureate
+spec:
+  parentRefs:
+    - name: pothole-gateway
+  rules:
+    - backendRefs:
+        - name: pothole-laureate
+          port: 8080

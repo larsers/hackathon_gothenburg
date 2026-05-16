@@ -1,0 +1,29 @@
+# GCP load-balancer health check pointed at Streamlit's /_stcore/health endpoint.
+#
+# Why this file exists: GKE Gateway does NOT infer health-check parameters
+# from a Pod's readinessProbe (Ingress did; Gateway doesn't). Without this
+# Policy, the LB defaults to GET / which on Streamlit triggers a full page
+# render — slow on a cold Pod, can flap and produce "no healthy upstream" 503s.
+#
+# Targets the Service by name; affects every NEG endpoint behind it.
+
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: pothole-laureate-hc
+  namespace: laureate
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 8080
+        requestPath: /_stcore/health
+  targetRef:
+    group: ""
+    kind: Service
+    name: pothole-laureate

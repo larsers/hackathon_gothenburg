@@ -1,0 +1,41 @@
+# Q6 Gold overlay — adds HTTPS :443 listener fronted by a Certificate Manager
+# managed cert. Apply this AFTER:
+#   1. The base k8s/gateway.yaml is up and serving HTTP on the static IP.
+#   2. You've created a Cert Manager certificate for <static-ip>.nip.io using
+#      load balancer authorization (NOT DNS authorization — nip.io has no
+#      parent zone you control, so the DNS-01 challenge can't succeed).
+#   3. You've created a CertificateMap + CertificateMapEntry binding the cert
+#      to the hostname, and named the map (substitute below).
+#
+# Cert provisioning takes 10-30 min after this Gateway picks up the certmap
+# annotation and starts serving the HTTP-01 challenge on :80.
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: pothole-gateway
+  namespace: laureate
+  annotations:
+    networking.gke.io/certmap: REPLACE_CERTMAP_NAME
+spec:
+  gatewayClassName: gke-l7-global-external-managed
+  addresses:
+    - type: NamedAddress
+      value: pothole-gateway-ip
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        kinds:
+          - kind: HTTPRoute
+        namespaces:
+          from: Same
+    - name: https
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        kinds:
+          - kind: HTTPRoute
+        namespaces:
+          from: Same
